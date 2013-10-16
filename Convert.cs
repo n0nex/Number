@@ -8,7 +8,7 @@ namespace Number
 {
     public class Convert
     {
-        public string ToWords(string number)
+        private string NumInWords(string number)
         {
             var numToWordsDict = new Dictionary<decimal, string>
             {
@@ -59,16 +59,16 @@ namespace Number
                                         .Cast<Match>()
                                         .Select(m => m.Groups[0].Value)
                                         .ToList();
-            string inWords = "";
+            string inWords = "";            
             int innerCounter = 0;
             foreach (string innerPart in firstPartInWords)
             {
                 if (!String.IsNullOrEmpty(innerPart))
                 {
                     if (innerCounter == 1)
-                        inWords = inWords.Insert(0, NumDeclension((int)Char.GetNumericValue(innerPart[innerPart.Count()-1])));
+                        inWords = inWords.Insert(0, NumDeclension(innerPart));
                     if (innerCounter == 2)// > 2
-                    {
+                    {   
                         if(innerPart.Count() == 1)
                             inWords = inWords.Insert(0, MillionAndAboveDecl("0"+innerPart));
                         else if(innerPart.Count() == 2)
@@ -82,23 +82,47 @@ namespace Number
                     switch (innerPart.Count())
                     {
                         case 1:
-                            inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == Convert.ToInt32(innerPart)).Value);
+                            if ((innerCounter == 1) && (Convert.ToInt32(innerPart) == 1) || (Convert.ToInt32(innerPart) == 2))
+                            {
+                                if (Convert.ToInt32(innerPart) == 1)
+                                    inWords = " одна";
+                                else
+                                    inWords = "две";
+                            }
+                            else
+                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == Convert.ToInt32(innerPart)).Value);
                             break;
                         case 2:
-                            if (firstPart < 20)
-                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == firstPart).Value);
+                            if (Convert.ToInt32(innerPart) < 20)
+                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == Convert.ToInt32(innerPart)).Value);
                             else
                             {
-                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == (int)Char.GetNumericValue(innerPart[1])).Value);
-                                inWords = inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == ((int)Char.GetNumericValue(innerPart[0])) * 10).Value);
-                            }
+                                if ((innerCounter == 1) && ((int)Char.GetNumericValue(innerPart[1]) == 1) || ((int)Char.GetNumericValue(innerPart[1]) == 2))
+                                {
+                                    if ((int)Char.GetNumericValue(innerPart[1]) == 1)
+                                        inWords = " одна";
+                                    else
+                                        inWords = "две";
+                                }
+                                else
+                                    inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == (int)Char.GetNumericValue(innerPart[1])).Value);
+                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == ((int)Char.GetNumericValue(innerPart[0])) * 10).Value);
+                            }                            
                             break;
                         case 3:
-                            if ((firstPart - (int)Char.GetNumericValue(innerPart[0]) * 100) < 20)
-                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == firstPart).Value);
+                            if ((Convert.ToInt32(innerPart) - (int)Char.GetNumericValue(innerPart[0]) * 100) < 20)
+                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == Convert.ToInt32(innerPart)).Value);
                             else
                             {
-                                inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == (int)Char.GetNumericValue(innerPart[2])).Value);
+                                if ((innerCounter == 1) && ((int)Char.GetNumericValue(innerPart[2]) == 1) || ((int)Char.GetNumericValue(innerPart[2]) == 2))
+                                {
+                                    if ((int)Char.GetNumericValue(innerPart[2]) == 1)
+                                        inWords = " одна";
+                                    else
+                                        inWords = "две";
+                                }
+                                else
+                                    inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == (int)Char.GetNumericValue(innerPart[2])).Value);
                                 inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == ((int)Char.GetNumericValue(innerPart[1])) * 10).Value);
                             }
                             inWords = inWords.Insert(0, numToWordsDict.Single(w => w.Key == ((int)Char.GetNumericValue(innerPart[0]) * 100)).Value);
@@ -110,12 +134,12 @@ namespace Number
             inWords += LVDeclension((int)Char.GetNumericValue(sum[0][(sum[0].Count()-1)]));
 
             var otherPart = inWords.Remove(0,2);
-            inWords = inWords[1].ToString().ToUpper() + otherPart + " "+ sum[1] + " копеек.";
+            inWords = inWords[1].ToString().ToUpper() + otherPart + " "+ sum[1] + " копеек."; 
             return inWords;
         }
 
         private string MillionAndAboveDecl(string num)
-        {
+        { 
             string val = " миллион";//можно добавить миллиарды и тпх
             int numLast = (int)Char.GetNumericValue(num[1]);
             if (numLast > 1 && numLast < 5 && Convert.ToInt32(num) < 10)
@@ -125,28 +149,22 @@ namespace Number
             return val;
         }
 
-        private string NumDeclension(int num)
+        private string NumDeclension(string num)
         {
+            string lastTwo = num.Substring(num.Length-2);
+            int last = Convert.ToInt32(num.Substring(num.Length-1));
             string decl = null;
-            if (num == 1)
-                decl = " тысяча";
-            else if (num > 1 && num < 5)
-                decl = " тысячи";
-            else
+            if (Convert.ToInt32(lastTwo) > 9 && Convert.ToInt32(lastTwo) < 21)
                 decl = " тысяч";
-            return decl;
-        }
-
-        private string LVDeclension(int num)
-        {
-            string decl = null;
-            if (num != 0 && num < 2)
-                decl = " рубль";
-            else if (num != 0 && num < 5)
-                decl = " рубля";
             else
-                decl = " рублей";
+            {
+                if (last == 1)
+                    decl = " тысяча";
+                else if (last > 1 && last < 5)
+                    decl = " тысячи";
+                else
+                    decl = " тысяч";
+            }
             return decl;
-        }
     }
 }
